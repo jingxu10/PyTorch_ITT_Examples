@@ -6,14 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
 import torchvision
-from torch.intel import itt
-# import matplotlib.pyplot as plt
+import torch.itt as itt
 
 EPOCH = 2
 BATCH_SIZE = 512
 LR = 0.01
 DOWNLOAD = True
-DATA = 'datasets/cifar10/'
+DATA = 'dataset/cifar10/'
 
 class ConvBlock(nn.Module):
     def __init__(self, in_channel, out_channel):
@@ -51,12 +50,6 @@ class ResidualBlock(nn.Module):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        # self.conv1 = ConvBlock(3, 10)    # 32x32 => 30x30
-        # self.conv2 = ConvBlock(10, 20)    # 30x30 => 28x28
-        # self.conv3 = ConvBlock(20, 40)    # 14x14 => 12x12
-        # self.conv4 = ConvBlock(40, 30)    # 12x12 => 10x10
-        # self.fc1 = nn.Linear(30*5*5, 10)    # 30x 5x 5 => 1x500
-
         self.conv0 = nn.Sequential(
             nn.Conv2d(3, 32, 3, padding=1),
             nn.BatchNorm2d(32),
@@ -72,16 +65,6 @@ class Net(nn.Module):
         self.dropout = nn.Dropout2d()
 
     def forward(self, x):
-        # x = self.conv1(x)
-        # x = self.conv2(x)
-        # x = F.max_pool2d(x, 2, 2)
-        # x = self.conv3(x)
-        # x = self.conv4(x)
-        # x = F.max_pool2d(x, 2, 2)
-        # x = self.dropout(x)
-        # x = x.view(x.size(0), -1)
-        # x = self.fc1(x)
-
         x = self.conv0(x)
         x = self.conv1(x)
         x = self.conv2(x)
@@ -109,10 +92,6 @@ def loadDataset():
         transform=transform,
         download=DOWNLOAD,
     )
-    # print(train_data.train_labels.size())
-    # plt.imshow(train_data.train_data[0].numpy(), cmap='gray')
-    # plt.title('%i' % train_data.train_labels[0])
-    # plt.show()
     train_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
 
     test_data = torchvision.datasets.CIFAR10(
@@ -121,10 +100,6 @@ def loadDataset():
         transform=transform,
         download=DOWNLOAD,
     )
-    # print(test_data.test_labels.size())
-    # plt.imshow(test_data.test_data[0].numpy(), cmap='gray')
-    # plt.title('%i' % test_data.test_labels[0])
-    # plt.show()
     test_loader = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -136,6 +111,8 @@ def train(train_loader, net, optimizer, epoch):
     itt.range_push('train')
     net.train()
     for batch_idx, (data, target) in enumerate(train_loader):
+        data = data
+        target = target
         optimizer.zero_grad()
         output = net(data)
         loss = F.nll_loss(output, target)
@@ -152,6 +129,8 @@ def test(test_loader, net, optimizer):
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
+            data = data
+            target = target
             output = net(data)
             test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
@@ -167,7 +146,7 @@ def main():
 
     net = Net()
     net.share_memory()
-    processes = []
+    net = net
     optimizer = torch.optim.SGD(net.parameters(), lr = LR, momentum=0.9)
 
     for epoch in range(EPOCH):
